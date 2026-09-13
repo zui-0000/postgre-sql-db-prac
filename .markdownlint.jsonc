@@ -1,0 +1,7 @@
+{
+  "$schema": "https://raw.githubusercontent.com/DavidAnson/markdownlint/main/schema/markdownlint-config-schema.json",
+  // MD013（1行の文字数制限）を無効にする。
+  // 表や用語の一覧は折り返せない。日本語の文章を途中で改行すると、
+  // 表示したときに余計なスペースが入ることがある。
+  "MD013": false
+}
