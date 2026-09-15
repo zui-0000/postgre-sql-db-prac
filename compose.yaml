@@ -1,0 +1,41 @@
+# OSS-DB Silver 学習用の PostgreSQL 環境
+# 使い方と設計の理由は docs/01-環境構築.md を参照
+
+name: postgre-sql-db-prac
+
+services:
+  # 普段使うサーバー（SQL、権限、VACUUM、pg_dump などを練習する）
+  db:
+    image: postgres:18.6
+    environment:
+      # ローカルの学習専用なので固定値にしている。
+      # 下の ports で 127.0.0.1 にだけ公開していることが前提
+      POSTGRES_PASSWORD: postgres
+    ports:
+      # 127.0.0.1 にだけ公開する（同じネットワークのほかの端末からは接続させない）
+      # ポートは .env の POSTGRES_PORT で変えられる（.env がなければ 5432）
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      # PG18 のイメージからマウント先が /var/lib/postgresql に変わった
+      - db-data:/var/lib/postgresql
+    healthcheck:
+      # 初期化中の一時サーバーは Unix ソケットでしか待ち受けない。
+      # TCP（-h 127.0.0.1）で確認して、本番のサーバーが起動してから healthy にする
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  # 運用管理（initdb、pg_ctl、PITR）を自分の手で練習する環境
+  sandbox:
+    image: postgres:18.6
+    # CMD を上書きして、initdb とサーバーの自動起動を止める
+    command: ["sleep", "infinity"]
+    # PID 1 に tini を置いて、pg_ctl で起動したプロセスの後始末をさせる
+    init: true
+    # docker compose exec で入ったときに postgres ユーザーになる
+    user: postgres
+
+volumes:
+  db-data:
